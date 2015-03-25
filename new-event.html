@@ -2,19 +2,23 @@
 <html>
   <head>
     <title>My Logs</title>
+    <link href="stylesheets/style.css" rel="stylesheet" type="text/css">
   </head>
   <body>
     <form class="newLogForm">
       <label class="label" for="newLogTitle"> title: </label>
       <input type="text" class="newLogTitle" id="newLogTitle"/></br>
+      <div class='clear'></div>
 
       <label class="label" for="newLogMessage"> message: </label>
-      <input type="textarea" class="newLogMessage" id="newLogMessage"/></br>
-      
+      <textarea rows="10" cols="40" class="newLogMessage" id="newLogMessage"></textarea></br>
+      <div class='clear'></div>
+
       <label class="label" for="newLogImage"> select image: </label>
       <input type="file" class="newLogImage" id="newLogImage" name="image"/>
-      <input type="submit" class="newLogSubmit" value="submit"/>
+      <div class='clear'></div>
 
+      <input type="submit" class="newLogSubmit" value="submit"/>
     <script type="text/javascript" src="js/lib/zepto.min.js"></script>
     <script type="text/javascript" src="js/app.js"/></script>
   </body>

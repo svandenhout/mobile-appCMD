@@ -2,7 +2,9 @@
 "use strict";
 
 var dairy = [],
-    imageBlob;
+    imageBlob,
+    currentLng,
+    currentLat;
 
 /*
   --DairyLog constructor--
@@ -43,28 +45,35 @@ Dairy.prototype.buildLogs = function() {
   var HTMLlogs = "";
   for(var i = 0; i < this.dairyLogs.length; i++) {
     var parseDate = new Date(this.dairyLogs[i].date).toLocaleDateString();
+    var clear = "<div class='clear'></div>";
     var date = 
-        "<span class='date'>" + 
+        "<span class='date'>" +
         parseDate + "</span>";
     var message = 
-        (this.dairyLogs[i].message) ? 
+        (this.dairyLogs[i].message) ?
         "<p class='message'>" + this.dairyLogs[i].message + "</p>" : "";
     var title = 
-        (this.dairyLogs[i].title) ? 
+        (this.dairyLogs[i].title) ?
         "<h1 class='title'>" + this.dairyLogs[i].title + "</h1>" : "";
     var image = 
-        (this.dairyLogs[i].image) ? 
+        (this.dairyLogs[i].image) ?
         "<img src='"+ this.dairyLogs[i].image +"'/>" : "";
+    var location = 
+        "";
     var removeBtn = 
         "<button class='removeLog' index='" + i + "'>remove</button>";
 
-    HTMLlogs = HTMLlogs + 
-        "<li class='log'>"
-        + title
-        + message
-        + image
-        + removeBtn
-        "</li>";
+    HTMLlogs = HTMLlogs +
+        "<div class='log'>"
+          + image
+          + "<div class='textDiv'>"
+            + title
+            + message
+          + "</div>"
+          + location
+          + removeBtn
+        + "</div>";
+    console.log(HTMLlogs);
   }
   return HTMLlogs;
 };
@@ -90,6 +99,13 @@ if($(".logList").length > 0) {
 };
 
 // form listeners
+if("geolocation" in navigator) {
+  navigator.geolocation.getCurrentPosition(function(position) {
+    currentLat = position.coords.latitude;
+    currentLng = position.coords.longitude;
+  });
+}
+
 $(".newLogImage").on("change", function(e) {
   var files = e.target.files;
 
@@ -103,11 +119,15 @@ $(".newLogImage").on("change", function(e) {
 $(".newLogForm").submit(function(e) {
   e.preventDefault();
 
+  var latLng = {};
+  if(currentLat) latLng.lat = currentLat;
+  if(currentLng) latLng.lng = currentLng;
+  
   var log = new DairyLog(
     $(".newLogTitle").val(),
     $(".newLogMessage").val(),
     imageBlob,
-    {}
+    latLng
   );
 
   if(sessionStorage.getItem("dairy"))
@@ -117,6 +137,7 @@ $(".newLogForm").submit(function(e) {
 
   sessionStorage.setItem("dairy", JSON.stringify(dairy));
   window.location = "index.html"
+  
 });
 
 })();
