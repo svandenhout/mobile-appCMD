@@ -4,7 +4,8 @@
 var dairy = [],
     imageBlob,
     currentLng,
-    currentLat;
+    currentLat,
+    API_KEY = "AIzaSyCs1tA0Phu_oYzrCI9YJqlE2L6UHuwxx1w";
 
 /*
   --DairyLog constructor--
@@ -41,6 +42,17 @@ function Dairy() {
   if(dairy) this.dairyLogs = JSON.parse(dairy);
 };
 
+Dairy.prototype.__getAddressFromLatLng = function(latlng, callback) {
+  var lat = this.dairyLogs.location.lat;
+  var lng = this.dairyLogs.location.lng;
+
+  var query = "latlng=" + lat + "," + lng + "&key=" + API_KEY;
+  var geocode = $.ajax("https://maps.googleapis.com/maps/api/geocode/json?" + query);
+  geocode.done(function(data) {
+    callback(data);
+  });
+}
+
 Dairy.prototype.buildLogs = function() {
   var HTMLlogs = "";
   for(var i = 0; i < this.dairyLogs.length; i++) {
@@ -62,6 +74,11 @@ Dairy.prototype.buildLogs = function() {
         "";
     var removeBtn = 
         "<button class='removeLog' index='" + i + "'>remove</button>";
+    if(this.dairyLogs.location) {
+      this.__getAddressFromLatLng(this.dairyLogs.location, function(data) {
+        console.log(data);
+      });
+    }
 
     HTMLlogs = HTMLlogs +
         "<div class='log'>"
@@ -73,7 +90,6 @@ Dairy.prototype.buildLogs = function() {
           + location
           + removeBtn
         + "</div>";
-    console.log(HTMLlogs);
   }
   return HTMLlogs;
 };
@@ -82,39 +98,6 @@ Dairy.prototype.removeLog = function(index) {
   this.dairyLogs.splice(index, 1);
   sessionStorage.setItem("dairy", JSON.stringify(this.dairyLogs));
 }
-
-// index listeners
-if($(".logList").length > 0) {
-  var dairy = new Dairy();
-  $(".logList").html(dairy.buildLogs());
-  // add remove listeners to logList
-  var removeLog = function() {
-    $(".removeLog").click(function() {
-      dairy.removeLog($(this).attr("index"));
-      $(".logList").html(dairy.buildLogs());
-      removeLog();
-    });
-  };
-  removeLog();
-};
-
-// form listeners
-if("geolocation" in navigator) {
-  navigator.geolocation.getCurrentPosition(function(position) {
-    currentLat = position.coords.latitude;
-    currentLng = position.coords.longitude;
-  });
-}
-
-$(".newLogImage").on("change", function(e) {
-  var files = e.target.files;
-
-  var reader = new FileReader();
-  reader.readAsDataURL(files[0]);
-  reader.onload = function(e) {
-    imageBlob = reader.result;
-  }
-});
 
 $(".newLogForm").submit(function(e) {
   e.preventDefault();
@@ -136,8 +119,56 @@ $(".newLogForm").submit(function(e) {
   dairy.push(log.getLog());
 
   sessionStorage.setItem("dairy", JSON.stringify(dairy));
-  window.location = "index.html"
-  
+  buildLogList();
+});
+
+$(".showForm").click(function(e) {
+  e.preventDefault();
+  $(".newLogForm").animate({top: "50px"}, 200);
+});
+
+$(".hideForm.submit").click(function() {
+  $(".newLogForm").animate({top: "100%"}, 200);
+});
+
+$(".hideForm.cancel").click(function(e) {
+  e.preventDefault();
+  $(".newLogForm").animate({top: "100%"}, 200);
+});
+
+var buildLogList = function() {
+  var dairy = new Dairy();
+  $(".logList").html(dairy.buildLogs());
+  // add remove listeners to logList
+  var removeLog = function() {
+    $(".removeLog").click(function() {
+      dairy.removeLog($(this).attr("index"));
+      $(".logList").html(dairy.buildLogs());
+      removeLog();
+    });
+  };
+  removeLog();
+};
+buildLogList();
+
+// new form listeners
+if("geolocation" in navigator) {
+  console.log(navigator.geolocation);
+  navigator.geolocation.getCurrentPosition(function(position) {
+    console.log(position);
+    currentLat = position.coords.latitude;
+    currentLng = position.coords.longitude;
+  });
+}
+
+$(".newLogImage").on("change", function(e) {
+  var files = e.target.files;
+
+  var reader = new FileReader();
+  reader.readAsDataURL(files[0]);
+  reader.onload = function(e) {
+    imageBlob = reader.result;
+  }
 });
 
 })();
