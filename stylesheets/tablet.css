@@ -1,0 +1,9 @@
+.log img {
+  position: absolute;
+  max-width: 200px;
+}
+
+.log .textDiv {
+  max-width: 400px;
+  margin-left: 220px;
+}
