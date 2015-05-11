@@ -5,6 +5,7 @@ var dairy = [],
     imageBlob,
     currentLng,
     currentLat,
+    loading = false,
     API_KEY = "AIzaSyCs1tA0Phu_oYzrCI9YJqlE2L6UHuwxx1w";
 
 /*
@@ -17,11 +18,11 @@ var dairy = [],
 */
 function DairyLog(title, message, image, location) {
   this.title = title;
-  this.message = message,
-  this.image = image
-  this.location = location
+  this.message = message;
+  this.image = image;
+  this.location = location;
   this.date = new Date();
-};
+}
 
 DairyLog.prototype.getLog = function() {
   var log = {
@@ -39,19 +40,24 @@ DairyLog.prototype.getLog = function() {
 */
 function Dairy() {
   var dairy = sessionStorage.getItem("dairy");
-  if(dairy) this.dairyLogs = JSON.parse(dairy);
-};
+  if(dairy) {
+    this.dairyLogs = JSON.parse(dairy);
+  }else {
+    this.dairyLogs = [];
+  }
+}
 
 Dairy.prototype.__getAddressFromLatLng = function(latlng, callback) {
   var lat = this.dairyLogs.location.lat;
   var lng = this.dairyLogs.location.lng;
 
   var query = "latlng=" + lat + "," + lng + "&key=" + API_KEY;
-  var geocode = $.ajax("https://maps.googleapis.com/maps/api/geocode/json?" + query);
+  var geocode = 
+      $.ajax("https://maps.googleapis.com/maps/api/geocode/json?" + query);
   geocode.done(function(data) {
     callback(data);
   });
-}
+};
 
 Dairy.prototype.buildLogs = function() {
   var HTMLlogs = "";
@@ -81,15 +87,15 @@ Dairy.prototype.buildLogs = function() {
     }
 
     HTMLlogs = HTMLlogs +
-        "<div class='log'>"
-          + image
-          + "<div class='textDiv'>"
-            + title
-            + message
-          + "</div>"
-          + location
-          + removeBtn
-        + "</div>";
+        "<div class='log'>" +
+          image +
+          "<div class='textDiv'>" +
+            title +
+            message +
+          "</div>" +
+          location +
+          removeBtn +
+        "</div>";
   }
   return HTMLlogs;
 };
@@ -97,10 +103,29 @@ Dairy.prototype.buildLogs = function() {
 Dairy.prototype.removeLog = function(index) {
   this.dairyLogs.splice(index, 1);
   sessionStorage.setItem("dairy", JSON.stringify(this.dairyLogs));
-}
+};
+
+function buildLogList() {
+  var dairy = new Dairy();
+  $(".logList").html(dairy.buildLogs());
+  // add remove listeners to logList
+  var removeLog = function() {
+    $(".removeLog").click(function() {
+      dairy.removeLog($(this).attr("index"));
+      $(".logList").html(dairy.buildLogs());
+      removeLog();
+    });
+  };
+  removeLog();
+};
+
+buildLogList();
 
 $(".newLogForm").submit(function(e) {
   e.preventDefault();
+
+  // not submitting during file load
+  if(loading) return false;
 
   var latLng = {};
   if(currentLat) latLng.lat = currentLat;
@@ -136,39 +161,38 @@ $(".hideForm.cancel").click(function(e) {
   $(".newLogForm").animate({top: "100%"}, 200);
 });
 
-var buildLogList = function() {
-  var dairy = new Dairy();
-  $(".logList").html(dairy.buildLogs());
-  // add remove listeners to logList
-  var removeLog = function() {
-    $(".removeLog").click(function() {
-      dairy.removeLog($(this).attr("index"));
-      $(".logList").html(dairy.buildLogs());
-      removeLog();
-    });
-  };
-  removeLog();
-};
-buildLogList();
-
 // new form listeners
 if("geolocation" in navigator) {
-  console.log(navigator.geolocation);
   navigator.geolocation.getCurrentPosition(function(position) {
-    console.log(position);
     currentLat = position.coords.latitude;
     currentLng = position.coords.longitude;
   });
 }
 
 $(".newLogImage").on("change", function(e) {
+  var status = $(".status");
   var files = e.target.files;
 
   var reader = new FileReader();
   reader.readAsDataURL(files[0]);
-  reader.onload = function(e) {
+  
+  reader.onloadstart = function() {
+    loading = true;
+    status.html("loading");
+  };
+
+  reader.onprogress = function(e) {
+    status.html(Math.round((e.total / e.loaded) * 100) + "%");
+  };
+
+  reader.onloadend = function() {
+    loading = false;
     imageBlob = reader.result;
-  }
+  };
+
+  reader.onerror = function() {
+    status.html(e)
+  };
 });
 
 })();
